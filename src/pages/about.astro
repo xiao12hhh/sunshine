@@ -6,6 +6,7 @@ import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import WordHeatmap from "../components/widget/WordHeatmap.astro";
+import SocialLinks from "../components/widget/SocialLinks.astro";
 
 const aboutPost = await getEntry("spec", "about");
 
@@ -24,6 +25,9 @@ const { Content } = await render(aboutPost);
         </div>
     </div>
 
+    <!-- 社交链接 -->
+    <SocialLinks class="onload-animation mt-4" style="animation-delay: 120ms"></SocialLinks>
+
     <!-- 码字热力图 -->
-    <WordHeatmap class="onload-animation mt-4" style="animation-delay: 150ms"></WordHeatmap>
+    <WordHeatmap class="onload-animation mt-4" style="animation-delay: 200ms"></WordHeatmap>
 </MainGridLayout>
