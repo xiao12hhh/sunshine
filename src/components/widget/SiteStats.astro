@@ -1,0 +1,59 @@
+---
+import { getBlogStatistics } from "../../utils/statistics";
+
+const stats = await getBlogStatistics();
+
+function formatNumber(n: number): string {
+	return n.toLocaleString("en-US");
+}
+
+const items = [
+	{ key: "posts", label: "文章", value: formatNumber(stats.postCount) },
+	{ key: "words", label: "字数", value: formatNumber(stats.wordCount) },
+	{ key: "cats", label: "分类", value: formatNumber(stats.categoryCount) },
+	{ key: "tags", label: "标签", value: formatNumber(stats.tagCount) },
+	{ key: "days", label: "运行天数", value: formatNumber(stats.runningDays) },
+	{ key: "updated", label: "最近更新", value: stats.lastUpdated },
+];
+
+interface Props {
+	class?: string;
+	style?: string;
+}
+const className = Astro.props.class;
+const style = Astro.props.style;
+---
+
+<div class:list={["card-base pb-4 ", className]} style={style}>
+	<div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2
+        before:w-1 before:h-4 before:rounded-md before:bg-[var(--primary)]
+        before:absolute before:left-[-16px] before:top-[5.5px]">
+		站点统计
+	</div>
+	<div class="px-5 pt-1">
+		<div class="grid grid-cols-3 gap-3">
+			{items.map((item) => (
+				<div
+					class:list={[
+						"rounded-xl px-2 py-3 text-center transition",
+						"bg-[var(--btn-regular-bg)] dark:bg-black/25",
+					]}
+				>
+					<div
+						class:list={[
+							"font-bold leading-tight truncate",
+							item.key === "days" || item.key === "updated"
+								? "text-[1.05rem] pt-0.5"
+								: "text-[1.35rem]",
+						]}
+						style={`color: oklch(0.72 0.14 var(--hue));`}
+						title={String(item.value)}
+					>
+						{item.value}
+					</div>
+					<div class="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">{item.label}</div>
+				</div>
+			))}
+		</div>
+	</div>
+</div>

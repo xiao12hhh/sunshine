@@ -1,0 +1,94 @@
+---
+import { getWordHeatmap } from "../../utils/statistics";
+
+const heat = await getWordHeatmap();
+
+const MONTH_LABELS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+
+/** 0~1 的字数占比 → Tailwind 青绿阶颜色（模拟 GitHub 热力图色阶） */
+function levelClass(ratio: number): string {
+	if (ratio <= 0) return "bg-neutral-200 dark:bg-neutral-700/60";
+	if (ratio < 0.25) return "bg-emerald-200 dark:bg-emerald-900";
+	if (ratio < 0.5) return "bg-emerald-400 dark:bg-emerald-700";
+	if (ratio < 0.75) return "bg-emerald-500 dark:bg-emerald-500";
+	return "bg-emerald-700 dark:bg-emerald-300";
+}
+
+/** 无稿格子：中性底色 */
+const EMPTY_CLASS = "bg-neutral-200/70 dark:bg-neutral-700/40";
+
+interface Props {
+	class?: string;
+	style?: string;
+}
+const className = Astro.props.class;
+const style = Astro.props.style;
+---
+
+<div class:list={["card-base pb-5 pt-4 px-4 ", className]} style={style}>
+	<div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-4 mt-1 mb-3
+        before:w-1 before:h-4 before:rounded-md before:bg-[var(--primary)]
+        before:absolute before:left-[-12px] before:top-[5.5px]">
+		码字热力图
+	</div>
+
+	{heat.years.length === 0 ? (
+		<p class="text-sm text-neutral-500 dark:text-neutral-400 px-1 pb-1">还没有任何写作记录，发表第一篇文章后这里会出现日历图。</p>
+	) : (
+		<>
+			{/* 图例 */}
+			<div class="flex items-center justify-end gap-1.5 mb-2 px-1 text-xs text-neutral-500 dark:text-neutral-400">
+				<span>少</span>
+				<span class={EMPTY_CLASS + " w-3 h-3 rounded-[4px] inline-block"}></span>
+				{[0.15, 0.35, 0.6, 0.85, 1].map((r) => (
+					<span class={levelClass(r) + " w-3 h-3 rounded-[4px] inline-block"}></span>
+				))}
+				<span>多</span>
+				<span class="ml-3 font-bold text-[var(--primary)] dark:text-[var(--primary)]">{heat.totalWords} 字</span>
+			</div>
+
+			{/* 热力图主体 */}
+			<div class="overflow-x-auto hide-scrollbar">
+				{heat.rows.map((row) => (
+					<div class="flex items-center gap-2 mb-1.5 last:mb-0">
+						{/* 年份 */}
+						<div
+							class="w-8 shrink-0 text-right text-xs font-bold pr-1 tabular-nums
+								text-neutral-600 dark:text-neutral-400"
+						>
+							{row[0].year}
+						</div>
+						{/* 12 个月格子 */}
+						<div class="grid grid-cols-12 gap-1 flex-1">
+							{row.map((cell) => (
+								cell.words > 0 ? (
+									<div
+										class={"aspect-square rounded-[4px] cursor-default transition hover:scale-110 " + levelClass(
+											heat.maxMonthWords > 0 ? cell.words / heat.maxMonthWords : 0
+										)}
+										title={`${cell.year}年${cell.month}月 · ${cell.words} 字`}
+									></div>
+								) : (
+									<div
+										class={"aspect-square rounded-[4px] " + EMPTY_CLASS}
+										title={`${cell.year}年${cell.month}月 · 0 字`}
+									></div>
+								)
+							))}
+						</div>
+					</div>
+				))}
+
+				{/* 月份刻度 */}
+				<div class="flex items-center gap-2 mt-1">
+					<div class="w-8 shrink-0"></div>
+					<div class="grid grid-cols-12 gap-1 flex-1">
+						{MONTH_LABELS.map((m) => (
+							<div class="text-center text-[10px] text-neutral-500 dark:text-neutral-500 tabular-nums">{m}</div>
+						))}
+					</div>
+				</div>
+			</div>
+		</>
+	)}
+</div>
