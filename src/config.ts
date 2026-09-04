@@ -17,7 +17,7 @@ export const siteConfig: SiteConfig = {
 	},
 	banner: {
 		enable: true,
-		src: "assets/images/demo-banner.png", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
+		src: "assets/images/banner.png", // 换成你自己的图：放进 src/assets/images/，再改这里；想铺全屏用 position: "center"
 		position: "center", // Equivalent to object-position, only supports 'top', 'center', 'bottom'. 'center' by default
 		credit: {
 			enable: false, // Display the credit text of the banner image
@@ -54,7 +54,7 @@ export const navBarConfig: NavBarConfig = {
 };
 
 export const profileConfig: ProfileConfig = {
-	avatar: "assets/images/demo-avatar.png", // 换成你自己的头像：图片放进来，改这里的路径即可
+	avatar: "assets/images/avatar.jpg", // 换成你自己的头像：图片放进 src/assets/images/，改这里即可
 	name: "Sunshine",
 	bio: "你好，这里是 Sunshine。",
 	links: [
