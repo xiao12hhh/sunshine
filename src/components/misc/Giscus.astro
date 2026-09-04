@@ -1,0 +1,64 @@
+---
+// Giscus 评论区组件
+// 配置来源：https://giscus.app/zh-CN
+// TODO: 填入你的仓库配置后启用
+const GISCUS_CONFIG = {
+	repo: "xiao12hhh/sunshine",
+	repoId: "R_kgDOUNtC8w",
+	category: "Announcements",
+	categoryId: "DIC_kwDOUNtC884DE13H",
+	mapping: "pathname", // 文章评论按 URL 关联
+	reactionsEnabled: "1",
+	emitMetadata: "0",
+	inputPosition: "top",
+	theme: "preferred_color_scheme", // 跟随系统亮暗
+	lang: "zh-CN",
+};
+
+interface Props {
+	class?: string;
+}
+
+const className = Astro.props.class;
+
+const scriptData = {
+	src: "https://giscus.app/client.js",
+	"data-repo": GISCUS_CONFIG.repo,
+	"data-repo-id": GISCUS_CONFIG.repoId,
+	"data-category": GISCUS_CONFIG.category,
+	"data-category-id": GISCUS_CONFIG.categoryId,
+	"data-mapping": GISCUS_CONFIG.mapping,
+	"data-reactions-enabled": GISCUS_CONFIG.reactionsEnabled,
+	"data-emit-metadata": GISCUS_CONFIG.emitMetadata,
+	"data-input-position": GISCUS_CONFIG.inputPosition,
+	"data-theme": GISCUS_CONFIG.theme,
+	"data-lang": GISCUS_CONFIG.lang,
+	"data-loading": "lazy",
+	crossorigin: "anonymous",
+	async: true,
+};
+---
+
+<div class:list={["w-full ", className]}>
+	<div class="flex items-center gap-2 mb-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
+		<span class="w-1 h-4 rounded-md bg-[var(--primary)]"></span>
+		评论
+	</div>
+	<div id="giscus-container">
+		<script is:inline define:vars={{ scriptData }} set:html={`加载评论组件需要先配置 giscus…`}></script>
+	</div>
+</div>
+
+<script is:inline define:vars={{ scriptData }}>
+	(function () {
+		var s = document.createElement("script");
+		s.src = scriptData.src;
+		s.async = scriptData.async;
+		s.crossOrigin = scriptData.crossorigin;
+		Object.keys(scriptData).forEach(function (k) {
+			if (k === "src" || k === "async" || k === "crossorigin") return;
+			s.setAttribute(k, scriptData[k]);
+		});
+		document.getElementById("giscus-container").appendChild(s);
+	})();
+</script>

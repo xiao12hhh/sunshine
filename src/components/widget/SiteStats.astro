@@ -55,5 +55,21 @@ const style = Astro.props.style;
 				</div>
 			))}
 		</div>
+
+		<!-- 不蒜子访问统计：由 /busuanzi 客户端脚本回填 -->
+		<div class="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-black/10 dark:border-white/10 text-xs text-neutral-500 dark:text-neutral-400">
+			<div class="flex items-center gap-1.5">
+				<span>👁️</span>
+				<span id="busuanzi_value_site_pv" class="font-bold tabular-nums text-neutral-700 dark:text-neutral-200">--</span>
+				<span>次访问</span>
+			</div>
+			<div class="flex items-center gap-1.5">
+				<span>🙋</span>
+				<span id="busuanzi_value_site_uv" class="font-bold tabular-nums text-neutral-700 dark:text-neutral-200">--</span>
+				<span>位访客</span>
+			</div>
+		</div>
 	</div>
 </div>
+
+<script is:inline src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script>
