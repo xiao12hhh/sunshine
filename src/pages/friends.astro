@@ -1,0 +1,99 @@
+---
+import { Icon } from "astro-icon/components";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+interface Friend {
+	name: string;
+	avatar: string;
+	url: string;
+	note?: string;
+	description?: string;
+}
+
+const friends: Friend[] = [
+	{
+		name: "Oct0pu5",
+		avatar: "https://s2.loli.net/2024/03/25/S7kUxpnCiyQwVz3.png",
+		url: "https://oct0pu5.cn/",
+		note: "学长",
+		description: "江洋无赖士·核舟轻酌老小诗",
+	},
+];
+---
+
+<MainGridLayout title="友情链接" description="Sunshine 的友情链接">
+	<div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-9 py-8 relative w-full">
+			<div class="font-bold transition text-2xl text-neutral-900 dark:text-neutral-100 relative ml-4 mt-1 mb-2
+				before:w-1 before:h-5 before:rounded-md before:bg-[var(--primary)]
+				before:absolute before:left-[-12px] before:top-[7px]">
+				友情链接
+			</div>
+			<p class="text-sm text-neutral-600 dark:text-neutral-400 ml-4 mb-2">
+				这里收录了我常逛的博客，欢迎互相串门。如果你也想交换链接，可以<a href="/about/" class="text-[var(--primary)] underline underline-offset-4">联系我</a>。
+			</p>
+		</div>
+	</div>
+
+	<!-- 友链列表 -->
+	<div class="mt-4 flex flex-col gap-3">
+		{friends.map((f) => (
+			<a
+				href={f.url}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="card-base group flex items-center gap-5 p-4 transition-all hover:scale-[1.01]
+					hover:shadow-[var(--shadow-md)]"
+			>
+				<!-- 头像 -->
+				<div class="shrink-0 w-20 h-20 rounded-2xl overflow-hidden bg-black/5 dark:bg-white/10
+					border border-black/10 dark:border-white/10">
+					<img
+						src={f.avatar}
+						alt={f.name}
+						class="w-full h-full object-cover transition-transform group-hover:scale-105"
+						loading="lazy"
+					/>
+				</div>
+
+				<!-- 名字 + 备注 -->
+				<div class="flex-1 min-w-0">
+					<div class="flex items-center gap-2 mb-1">
+						<span class="font-bold text-lg text-neutral-900 dark:text-neutral-100">
+							{f.name}
+						</span>
+						{f.note && (
+							<span class="text-xs px-2 py-0.5 rounded-full
+								bg-[var(--btn-regular-bg)] text-neutral-600 dark:text-neutral-400">
+								{f.note}
+							</span>
+						)}
+					</div>
+					{f.description && (
+						<div class="text-sm text-neutral-500 dark:text-neutral-400 truncate">
+							{f.description}
+						</div>
+					)}
+					<div class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5 truncate">
+						{f.url}
+					</div>
+				</div>
+
+				<!-- 外链箭头 -->
+				<Icon
+					name="material-symbols:arrow-outward-rounded"
+					class="text-[1.5rem] text-neutral-400 dark:text-neutral-500 shrink-0 transition group-hover:text-[var(--primary)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+				></Icon>
+			</a>
+		))}
+	</div>
+
+	<!-- 交换友链说明 -->
+	<div class="card-base px-6 py-5 mt-4 text-sm text-neutral-600 dark:text-neutral-400">
+		<div class="font-bold text-base text-neutral-800 dark:text-neutral-200 mb-2">📮 友链申请</div>
+		<ul class="list-disc list-inside space-y-1">
+			<li>先在我的 <a href="/about/" class="text-[var(--primary)] underline">关于页</a> 留下你的站点信息</li>
+			<li>本站会定期回访，互相挂上后就能在两边都看到</li>
+		</ul>
+	</div>
+</MainGridLayout>

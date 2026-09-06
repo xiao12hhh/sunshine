@@ -44,6 +44,11 @@ export const navBarConfig: NavBarConfig = {
 		LinkPreset.Home,
 		LinkPreset.Archive,
 		LinkPreset.About,
+		{
+			name: "友链",
+			url: "/friends/",
+			external: false,
+		},
 		// 想加自己的链接就照下面这个格式写（external: true 表示新标签打开）
 		// {
 		// 	name: "GitHub",
