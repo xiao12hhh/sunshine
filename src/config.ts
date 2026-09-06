@@ -49,6 +49,11 @@ export const navBarConfig: NavBarConfig = {
 			url: "/friends/",
 			external: false,
 		},
+		{
+			name: "小游戏",
+			url: "/neondash/",
+			external: false,
+		},
 		// 想加自己的链接就照下面这个格式写（external: true 表示新标签打开）
 		// {
 		// 	name: "GitHub",

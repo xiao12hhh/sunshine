@@ -1,0 +1,48 @@
+---
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+---
+
+<MainGridLayout title="霓虹疾驰 Neon Dash" description="在浏览器里直接玩的霓虹风格三车道跑酷小游戏，无需下载安装">
+	<div class="w-full flex flex-col items-center gap-4 onload-animation">
+		<!-- 顶部说明条 -->
+		<div class="w-full card-base px-6 py-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-neutral-600 dark:text-neutral-400">
+			<div class="flex items-center gap-2 font-bold text-base text-neutral-900 dark:text-neutral-100">
+				<span class="w-1 h-4 rounded-md bg-[var(--primary)]"></span>
+				霓虹疾驰 · Neon Dash
+			</div>
+			<span>· 三车道假 3D · 无尽跑酷 · 键盘 ←→ 空格 ↓ 操作 · 最高分自动存档</span>
+		</div>
+
+		<!-- 游戏 iframe（自适应宽度 16:9） -->
+		<div class="w-full flex justify-center">
+			<div
+				class="card-base overflow-hidden w-full max-w-[1280px]"
+				style="aspect-ratio: 16 / 9;"
+			>
+				<iframe
+					src="/games/neondash/"
+					title="霓虹疾驰 Neon Dash"
+					class="w-full h-full border-0 bg-black"
+					loading="lazy"
+					allow="autoplay; fullscreen; gamepad"
+				></iframe>
+			</div>
+		</div>
+
+		<!-- 操作提示 -->
+		<div class="w-full max-w-[1280px] card-base px-6 py-4 text-sm text-neutral-600 dark:text-neutral-400">
+			<div class="font-bold text-base text-neutral-900 dark:text-neutral-100 mb-2">⌨️ 操作说明</div>
+			<div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1.5">
+				<div><kbd class="font-mono">← / A</kbd>&nbsp;← 跑道</div>
+				<div><kbd class="font-mono">→ / D</kbd>&nbsp;→ 跑道</div>
+				<div><kbd class="font-mono">Space / ↑ / W</kbd>&nbsp;跳跃</div>
+				<div><kbd class="font-mono">↓ / S</kbd>&nbsp;滑铲</div>
+				<div><kbd class="font-mono">P / Esc</kbd>&nbsp;暂停</div>
+				<div><kbd class="font-mono">鼠标</kbd>&nbsp;菜单点击</div>
+			</div>
+			<div class="text-xs text-neutral-500 dark:text-neutral-500 mt-3">
+				💡 首次加载约需 10-20 秒（载入 WebAssembly 运行时）。你的最高分会保存在浏览器本地。
+			</div>
+		</div>
+	</div>
+</MainGridLayout>
