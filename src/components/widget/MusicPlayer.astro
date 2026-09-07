@@ -1,0 +1,192 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface Track {
+	name: string; // 显示名
+	file: string; // public/music 下文件名
+}
+// 可自由使用的纯音乐（SoundHelix，用于技术演示/自由使用场景）
+// 想增删歌单直接改这里
+const tracks: Track[] = [
+	{ name: "Amazing Plan", file: "song-1.mp3" },
+	{ name: "Heartbreaking", file: "song-2.mp3" },
+	{ name: "Happy Boy End Theme", file: "song-3.mp3" },
+	{ name: "Carefree", file: "song-4.mp3" },
+	{ name: "Comfortable Mystery", file: "song-5.mp3" },
+];
+
+const trackJson = JSON.stringify(tracks);
+const baseUrl = import.meta.env.BASE_URL;
+---
+
+<!-- 音乐播放器：右下角悬浮 -->
+<div id="music-player" class="fixed bottom-5 right-5 z-[60] flex flex-col items-end gap-3">
+	<!-- 展开面板 -->
+	<div
+		id="music-panel"
+		class="card-base w-64 rounded-2xl p-4 flex-col gap-3 hidden opacity-0 translate-y-2
+			transition-all duration-300 shadow-[var(--shadow-lg)]"
+	>
+		<div class="flex items-center justify-between">
+			<div class="flex-1 min-w-0 mr-2">
+				<div id="mp-status" class="text-[11px] text-neutral-500 dark:text-neutral-400 mb-0.5">
+					<span id="mp-icon">♪</span> 未播放
+				</div>
+				<div id="mp-title" class="font-bold text-sm text-neutral-900 dark:text-neutral-100 truncate">
+					{trackJson && "点击播放"}
+				</div>
+			</div>
+			<div id="mp-art-rot" class="shrink-0 w-11 h-11 rounded-full bg-black/5 dark:bg-white/10
+				flex items-center justify-center text-xl text-[var(--primary)]">
+				<Icon name="material-symbols:music-note-rounded"></Icon>
+			</div>
+		</div>
+
+		<!-- 进度条 -->
+		<div class="flex items-center gap-2 text-[11px] text-neutral-500 dark:text-neutral-400">
+			<span id="mp-cur">0:00</span>
+			<div id="mp-bar" class="flex-1 h-1.5 rounded-full bg-black/10 dark:bg-white/10 cursor-pointer relative overflow-hidden">
+				<div id="mp-prog" class="absolute inset-y-0 left-0 w-0 bg-[var(--primary)] rounded-full transition-[width] duration-200"></div>
+			</div>
+			<span id="mp-dur">0:00</span>
+		</div>
+
+		<!-- 控制行 -->
+		<div class="flex items-center justify-center gap-4 text-[var(--primary)]">
+			<button id="mp-prev" class="btn-plain p-1.5 rounded-full text-xl" title="上一首">
+				<Icon name="material-symbols:skip-previous-rounded"></Icon>
+			</button>
+			<button id="mp-play" class="btn-plain p-2 rounded-full text-[1.75rem]" title="播放/暂停">
+				<Icon name="material-symbols:play-arrow-rounded"></Icon>
+			</button>
+			<button id="mp-next" class="btn-plain p-1.5 rounded-full text-xl" title="下一首">
+				<Icon name="material-symbols:skip-next-rounded"></Icon>
+			</button>
+			<button id="mp-list" class="btn-plain p-1.5 rounded-full text-xl" title="切换歌单(未做)">
+				<Icon name="material-symbols:queue-music-rounded"></Icon>
+			</button>
+		</div>
+		<!-- 简单播放列表 -->
+		<div id="mp-list-panel" class="flex flex-col gap-0.5 mt-1 max-h-28 overflow-y-auto hidden">
+			{/* 由 JS 填充 */}
+		</div>
+	</div>
+
+	<!-- 悬浮按钮 -->
+	<button
+		id="mp-toggle"
+		class="w-12 h-12 rounded-full card-base flex items-center justify-center text-[1.6rem]
+			text-[var(--primary)] shadow-[var(--shadow-lg)] hover:scale-110 transition active:scale-95"
+		title="背景音乐"
+	>
+		<Icon name="material-symbols:music-note-rounded"></Icon>
+	</button>
+</div>
+
+<audio id="mp-audio" preload="none" src=""></audio>
+
+<script is:inline define:vars={{ trackJson, baseUrl }}>
+	const tracks = JSON.parse(trackJson);
+	const audio = document.getElementById("mp-audio");
+	const btn = document.getElementById("mp-toggle");
+	const panel = document.getElementById("mp-panel");
+	const playBtn = document.getElementById("mp-play");
+	const prevBtn = document.getElementById("mp-prev");
+	const nextBtn = document.getElementById("mp-next");
+	const listBtn = document.getElementById("mp-list");
+	const listPanel = document.getElementById("mp-list-panel");
+	const titleEl = document.getElementById("mp-title");
+	const statusEl = document.getElementById("mp-status");
+	const iconEl = document.getElementById("mp-icon");
+	const progEl = document.getElementById("mp-prog");
+	const barEl = document.getElementById("mp-bar");
+	const curEl = document.getElementById("mp-cur");
+	const durEl = document.getElementById("mp-dur");
+
+	let idx = 0;
+	let open = false;
+	let listOpen = false;
+
+	const base = baseUrl + "music/";
+	function trackSrc(i) {
+		return base + tracks[i].file;
+	}
+	function fmt(sec) {
+		if (!isFinite(sec)) return "0:00";
+		const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+		return m + ":" + (s < 10 ? "0" : "") + s;
+	}
+	function setTitle() {
+		titleEl.textContent = tracks[idx].name;
+	}
+	function updateStatus(playing) {
+		if (playing) {
+			statusEl.innerHTML = '<span id="mp-icon">♫</span> 播放中';
+			playBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+		} else {
+			statusEl.innerHTML = '<span id="mp-icon">♪</span> 已暂停';
+			playBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7"><path d="M8 5v14l11-7z"/></svg>';
+		}
+	}
+	function renderList() {
+		listPanel.innerHTML = "";
+		tracks.forEach((t, i) => {
+			const d = document.createElement("button");
+			d.className = "text-left text-xs px-2 py-1 rounded-md hover:bg-black/5 dark:hover:bg-white/10 truncate" +
+				(i === idx ? " text-[var(--primary)] font-semibold" : " text-neutral-600 dark:text-neutral-400");
+			d.textContent = (i + 1) + ". " + t.name;
+			d.addEventListener("click", () => { idx = i; playTrack(); });
+			listPanel.appendChild(d);
+		});
+	}
+	function playTrack() {
+		audio.src = trackSrc(idx);
+		setTitle();
+		audio.play().then(() => updateStatus(true)).catch(() => updateStatus(false));
+		renderList();
+	}
+	function togglePlay() {
+		if (!audio.src) { playTrack(); return; }
+		if (audio.paused) audio.play().then(() => updateStatus(true)).catch(() => {});
+		else audio.pause();
+	}
+
+	btn.addEventListener("click", () => {
+		open = !open;
+		if (open) {
+			panel.classList.remove("hidden");
+			requestAnimationFrame(() => {
+				panel.classList.remove("opacity-0", "translate-y-2");
+			});
+		} else {
+			panel.classList.add("opacity-0", "translate-y-2");
+			setTimeout(() => panel.classList.add("hidden"), 300);
+		}
+	});
+	playBtn.addEventListener("click", togglePlay);
+	nextBtn.addEventListener("click", () => { idx = (idx + 1) % tracks.length; playTrack(); });
+	prevBtn.addEventListener("click", () => { idx = (idx - 1 + tracks.length) % tracks.length; playTrack(); });
+	listBtn.addEventListener("click", () => {
+		listOpen = !listOpen;
+		listPanel.classList.toggle("hidden", !listOpen);
+		renderList();
+	});
+
+	audio.addEventListener("timeupdate", () => {
+		if (audio.duration) {
+			progEl.style.width = (audio.currentTime / audio.duration * 100) + "%";
+			curEl.textContent = fmt(audio.currentTime);
+		}
+	});
+	audio.addEventListener("loadedmetadata", () => { durEl.textContent = fmt(audio.duration); });
+	audio.addEventListener("ended", () => { idx = (idx + 1) % tracks.length; playTrack(); });
+	audio.addEventListener("play", () => updateStatus(true));
+	audio.addEventListener("pause", () => updateStatus(false));
+	audio.addEventListener("error", () => updateStatus(false));
+
+	barEl.addEventListener("click", (e) => {
+		if (!audio.duration) return;
+		const r = barEl.getBoundingClientRect();
+		audio.currentTime = ((e.clientX - r.left) / r.width) * audio.duration;
+	});
+</script>
