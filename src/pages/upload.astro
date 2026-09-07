@@ -1,0 +1,330 @@
+---
+import { Icon } from "astro-icon/components";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+const repoOwner = "xiao12hhh";
+const repoName = "sunshine";
+const postsDir = "src/content/posts/";
+const branch = "main";
+---
+
+<MainGridLayout title="投稿" description="上传 Markdown 自动发布到博客">
+	<!-- 顶部说明 -->
+	<div class="w-full flex flex-col items-center gap-4 onload-animation">
+		<div class="w-full card-base px-6 py-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-neutral-600 dark:text-neutral-400">
+			<div class="flex items-center gap-2 font-bold text-base text-neutral-900 dark:text-neutral-100">
+				<span class="w-1 h-4 rounded-md bg-[var(--primary)]"></span>
+				投稿 · 自动发布
+			</div>
+			<span>· 上传 md 自动推送 GitHub，约 2 分钟上线 · 需要先配置 GitHub 令牌</span>
+		</div>
+
+		<!-- 表单卡片 -->
+		<div class="w-full card-base p-6 flex flex-col gap-4 max-w-[680px]">
+			<!-- 令牌 -->
+			<div class="flex flex-col gap-1.5">
+				<label class="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+					GitHub 令牌 <span class="text-xs font-normal text-neutral-500">（Personal Access Token，需 repo 写权限，只存在本浏览器）</span>
+				</label>
+				<div class="flex gap-2">
+					<input
+						id="tok"
+						type="password"
+						class="w-full px-3 py-2 rounded-lg bg-black/5 dark:bg-white/10 text-sm
+							outline-none border border-transparent focus:border-[var(--primary)]"
+						placeholder="粘贴你的 PAT…"
+						autocomplete="off"
+					/>
+					<button id="save-tok" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[var(--primary)] hover:opacity-90 shrink-0">
+						保存
+					</button>
+				</div>
+				<div id="tok-status" class="text-xs text-neutral-500"></div>
+			</div>
+
+			<hr class="border-black/10 dark:border-white/15" />
+
+			<!-- 文件与封面 -->
+			<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+				<div class="flex flex-col gap-1.5">
+					<label class="text-sm font-semibold text-neutral-800 dark:text-neutral-200">① Markdown 文件</label>
+					<label class="cursor-pointer border-2 border-dashed border-black/15 dark:border-white/20 rounded-xl
+						p-5 flex flex-col items-center gap-2 text-neutral-500 dark:text-neutral-400 hover:border-[var(--primary)] transition">
+						<Icon name="material-symbols:description-rounded" class="w-8 h-8"></Icon>
+						<span id="md-name" class="text-xs text-center">点击选择 .md 文件<br />支持带 frontmatter 或纯正文</span>
+						<input id="md-file" type="file" accept=".md,.markdown,.txt" class="hidden" />
+					</label>
+				</div>
+				<div class="flex flex-col gap-1.5">
+					<label class="text-sm font-semibold text-neutral-800 dark:text-neutral-200">② 封面图（可选）</label>
+					<label class="cursor-pointer border-2 border-dashed border-black/15 dark:border-white/20 rounded-xl
+						p-5 flex flex-col items-center gap-2 text-neutral-500 dark:text-neutral-400 hover:border-[var(--primary)] transition">
+						<div id="img-preview" class="w-14 h-14 rounded-lg overflow-hidden bg-black/5 dark:bg-white/10 hidden">
+							<img id="img-preview-el" class="w-full h-full object-cover" alt="" />
+						</div>
+						<Icon name="material-symbols:image-rounded" class="w-8 h-8"></Icon>
+						<span id="img-name" class="text-xs text-center">点击选择封面图<br />jpg / png / webp</span>
+						<input id="img-file" type="file" accept=".jpg,.jpeg,.png,.webp" class="hidden" />
+					</label>
+				</div>
+			</div>
+
+			<!-- 元信息 -->
+			<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+				<div class="flex flex-col gap-1">
+					<label for="slug" class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">文件名（URL，英文）</label>
+					<input id="slug" class="px-3 py-2 rounded-lg bg-black/5 dark:bg-white/10 text-sm outline-none border border-transparent focus:border-[var(--primary)]" placeholder="my-post" />
+				</div>
+				<div class="flex flex-col gap-1">
+					<label for="category" class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">分类</label>
+					<input id="category" class="px-3 py-2 rounded-lg bg-black/5 dark:bg-white/10 text-sm outline-none border border-transparent focus:border-[var(--primary)]" placeholder="学习 / 随笔 / 日常 / 读后感" list="cat-list" />
+					<datalist id="cat-list">
+						<option>学习</option><option>随笔</option><option>日常</option><option>读后感</option><option>思考</option>
+					</datalist>
+				</div>
+				<div class="flex flex-col gap-1">
+					<label for="tags" class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">标签（逗号分隔）</label>
+					<input id="tags" class="px-3 py-2 rounded-lg bg-black/5 dark:bg-white/10 text-sm outline-none border border-transparent focus:border-[var(--primary)]" placeholder="阅读, Java" />
+				</div>
+			</div>
+
+			<div id="md-preview" class="hidden flex flex-col gap-1">
+				<label class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">已检测到 frontmatter，将原样发布（slug / category / tags 仅用于未带 frontmatter 的文件）</label>
+			</div>
+
+			<!-- 发布按钮 -->
+			<button
+				id="publish"
+				disabled
+				class="w-full py-3 rounded-xl font-bold text-white bg-[var(--primary)] hover:opacity-90
+					disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+			>
+				<Icon name="material-symbols:rocket-launch-rounded" class="w-5 h-5"></Icon>
+				发布文章
+			</button>
+			<div id="status" class="text-xs text-neutral-500 min-h-4 whitespace-pre-wrap break-all"></div>
+
+			<div class="text-[11px] text-neutral-400 dark:text-neutral-500 leading-relaxed border-t border-black/10 dark:border-white/15 pt-3">
+				⚠️ 发布 = 推送 md（+封面）到 GitHub 仓库 <code class="font-mono">src/content/posts/</code>，随后 GitHub Actions 自动构建部署，约 2 分钟生效。<br />
+				令牌创建方法：GitHub → Settings → Developer settings → Personal access tokens → 生成（选仓库写权限 repo / contents:write），可随时吊销。
+			</div>
+		</div>
+	</div>
+</MainGridLayout>
+
+<script is:inline define:vars={{ repoOwner, repoName, postsDir, branch }}>
+	// ---------- 配置 ----------
+	const REPO = repoOwner + "/" + repoName;
+	const API = "https://api.github.com";
+	const LS_KEY = "sunshine_pat";
+	const LS_SLUG = "sunshine_last_slug";
+
+	// ---------- DOM ----------
+	const $ = (id) => document.getElementById(id);
+	const tok = $("tok"), saveTok = $("save-tok"), tokStatus = $("tok-status");
+	const mdFile = $("md-file"), mdName = $("md-name");
+	const imgFile = $("img-file"), imgName = $("img-name");
+	const previewWrap = $("img-preview"), previewEl = $("img-preview-el");
+	const slugEl = $("slug"), categoryEl = $("category"), tagsEl = $("tags");
+	const publish = $("publish"), status = $("status");
+	const mdPreview = $("md-preview");
+
+	let mdText = null;
+	let mdHasFront = false;
+	let imgData = null; // { name, base64, mime }
+	let imgFileName = null;
+
+	// 恢复令牌
+	const saved = localStorage.getItem(LS_KEY);
+	if (saved) tok.value = saved;
+
+	function setStatus(t, color) {
+		status.textContent = t;
+		status.style.color = color || "";
+	}
+
+	// ---------- 令牌 ----------
+	saveTok.addEventListener("click", async () => {
+		const t = tok.value.trim();
+		if (!t) { setStatus("请先粘贴令牌", "#e11d48"); return; }
+		saveTok.disabled = true;
+		saveTok.textContent = "验证中…";
+		try {
+			const r = await fetch(`${API}/user`, { headers: { Authorization: `Bearer ${t}` } });
+			if (!r.ok) throw new Error("HTTP " + r.status);
+			const me = await r.json();
+			localStorage.setItem(LS_KEY, t);
+			setStatus(`✓ 已保存，欢迎 ${me.login}`, "#16a34a");
+			refreshPublish();
+		} catch (e) {
+			setStatus("验证失败，请检查令牌是否有效", "#e11d48");
+		} finally {
+			saveTok.disabled = false;
+			saveTok.textContent = "保存";
+		}
+	});
+
+	// ---------- 文件选择 ----------
+	mdFile.addEventListener("change", async () => {
+		const f = mdFile.files[0];
+		if (!f) return;
+		mdText = await f.text();
+		mdName.innerHTML = "✓ " + f.name;
+		mdName.parentElement.classList.add("!border-[var(--primary)]", "!text-[var(--primary)]");
+
+		// 检测 frontmatter
+		mdHasFront = /^---\s*\r?\n[\s\S]*?\r?\n---/.test(mdText);
+		if (!mdHasFront) {
+			mdPreview.classList.remove("hidden");
+			mdPreview.querySelector("label").textContent =
+				"⚠️ 未检测到 frontmatter —— 将使用下方的文件名 / 分类 / 标签自动生成文章头。";
+		} else {
+			mdPreview.classList.remove("hidden");
+			mdPreview.querySelector("label").textContent =
+				"✓ 已检测到 frontmatter —— 将保留原样发布。若想换封面，请在上方另选封面图（会自动写入 image 字段）。";
+		}
+		// 默认 slug = 文件名
+		const stem = f.name.replace(/\.(md|markdown|txt)$/i, "");
+		if (!slugEl.value) slugEl.value = stem.replace(/[^a-zA-Z0-9-_]/g, "-").toLowerCase();
+		refreshPublish();
+	});
+
+	imgFile.addEventListener("change", () => {
+		const f = imgFile.files[0];
+		if (!f) return;
+		if (!f.type.startsWith("image/")) { setStatus("封面必须是图片文件", "#e11d48"); return; }
+		const reader = new FileReader();
+		reader.onload = () => {
+			imgData = { base64: reader.result.split(",")[1], mime: f.type };
+			imgFileName = f.name.replace(/[^a-zA-Z0-9.-]/g, "-");
+			imgName.textContent = "✓ " + f.name;
+			imgName.parentElement.classList.add("!border-[var(--primary)]", "!text-[var(--primary)]");
+			previewWrap.classList.remove("hidden");
+			previewEl.src = reader.result;
+			refreshPublish();
+		};
+		reader.readAsDataURL(f);
+	});
+
+	// ---------- 表单联动 ----------
+	[slugEl, categoryEl, tagsEl].forEach((el) => el.addEventListener("input", refreshPublish));
+
+	function refreshPublish() {
+		const okTok = !!tok.value.trim();
+		const okMd = !!mdText;
+		publish.disabled = !(okTok && okMd);
+	}
+
+	// ---------- 发布 ----------
+	publish.addEventListener("click", async () => {
+		const t = tok.value.trim();
+		const slug = (slugEl.value.trim() || "post-" + Date.now()).replace(/[^a-zA-Z0-9-_]/g, "-").toLowerCase();
+		if (!mdText) { setStatus("请先选择 Markdown 文件", "#e11d48"); return; }
+
+		publish.disabled = true;
+		publish.textContent = "发布中…";
+		setStatus("正在读取仓库最新提交…", "");
+
+		try {
+			// 1) 构造目标 md 内容
+			let body = mdText;
+			let mdPath = postsDir + slug + ".md";
+			let coverPath = null;
+
+			if (!mdHasFront) {
+				// 生成 frontmatter
+				const title = (slugEl.value.trim() || slug).replace(/-/g, " ");
+				const cat = categoryEl.value.trim() || "随笔";
+				const tagsRaw = tagsEl.value.trim();
+				const tagArr = tagsRaw ? tagsRaw.split(/[,，]/).map((x) => x.trim()).filter(Boolean) : ["随笔"];
+				const date = new Date().toISOString().slice(0, 10);
+				const imgLine = imgFileName ? `image: './${imgFileName}'\n` : "";
+				const front = `---\ntitle: ${title}\npublished: ${date}\ndescription: ${title}\n${imgLine}tags: [${tagArr.join(", ")}]\ncategory: '${cat}'\ndraft: false\n---\n\n`;
+				body = front + (mdText || "").replace(/^\uFEFF/, "").trimStart();
+			} else if (imgFileName && !/^image:/m.test(body)) {
+				// 有封面但 frontmatter 没 image：补一行
+				const lines = body.split("\n");
+				let insertAt = -1;
+				for (let i = 0; i < lines.length; i++) {
+					if (/^---\s*$/.test(lines[i]) && i > 0) { insertAt = i; break; }
+				}
+				if (insertAt < 0) insertAt = 1;
+				lines.splice(insertAt, 0, `image: './${imgFileName}'`);
+				body = lines.join("\n");
+			}
+
+			// 2) 计算封面目标路径 & 准备 blobs
+			if (imgData) {
+				const ext = imgFileName.includes(".") ? imgFileName.split(".").pop() : "png";
+				coverPath = postsDir + "cover-" + slug + "." + ext;
+				// 把 body 里的 image 文件名改为 cover-xxx.ext
+				body = body.replace(new RegExp("image: './" + imgFileName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "'"), "image: './cover-" + slug + "." + ext + "'");
+			}
+
+			// 3) Git Data API —— 用一棵树提交 md(+封面)
+			const head = await gh(API + `/repos/${REPO}/git/ref/heads/${branch}`, t);
+			const sha = head.object.sha;
+
+			const blobs = [];
+			blobs.push(await gh(API + `/repos/${REPO}/git/blobs`, t, "POST", { content: b64(body), encoding: "base64" }));
+			if (imgData && coverPath) blobs.push(await gh(API + `/repos/${REPO}/git/blobs`, t, "POST", { content: imgData.base64, encoding: "base64" }));
+
+			const treeItems = [
+				{ path: mdPath, mode: "100644", type: "blob", sha: blobs[0].sha },
+			];
+			if (imgData && coverPath) treeItems.push({ path: coverPath, mode: "100644", type: "blob", sha: blobs[1].sha });
+
+			// 基树
+			const baseTree = await gh(API + `/repos/${REPO}/git/trees/${sha}`, t);
+			const tree = await gh(API + `/repos/${REPO}/git/trees`, t, "POST", { base_tree: baseTree.sha, tree: treeItems });
+
+			// 提交
+			const commit = await gh(API + `/repos/${REPO}/git/commits`, t, "POST", {
+				message: "post: " + (slug.replace(/-/g, " ") || "untitled"),
+				tree: tree.sha,
+				parents: [sha],
+			});
+			// 更新引用
+			await gh(API + `/repos/${REPO}/git/refs/heads/${branch}`, t, "PATCH", { sha: commit.sha, force: false });
+
+			localStorage.setItem(LS_SLUG, slug);
+			setStatus("✓ 已推送到 GitHub！约 2 分钟后上线。可继续发下一篇。", "#16a34a");
+			publish.textContent = "发布成功 ✓";
+			mdFile.value = ""; imgFile.value = ""; mdText = null; imgData = null;
+		} catch (e) {
+			console.error(e);
+			setStatus("发布失败：" + (e.message || e), "#e11d48");
+		} finally {
+			setTimeout(() => { publish.textContent = "发布文章"; refreshPublish(); }, 3000);
+		}
+	});
+
+	// ---------- 工具 ----------
+	function b64(str) {
+		// 支持中文的 base64（UTF-8）
+		const bytes = new TextEncoder().encode(str);
+		let bin = "";
+		bytes.forEach((b) => (bin += String.fromCharCode(b)));
+		return btoa(bin);
+	}
+
+	async function gh(url, token, method = "GET", body = null) {
+		const res = await fetch(url, {
+			method,
+			headers: {
+				Authorization: `Bearer ${token}`,
+				"Content-Type": "application/json",
+				Accept: "application/vnd.github+json",
+				"X-GitHub-Api-Version": "2022-11-28",
+				"User-Agent": "sunshine-blog",
+			},
+			body: body ? JSON.stringify(body) : undefined,
+		});
+		if (!res.ok) {
+			let msg = "HTTP " + res.status;
+			try { const d = await res.json(); if (d.message) msg += ": " + d.message; } catch {}
+			throw new Error(msg);
+		}
+		return res.json();
+	}
+</script>
