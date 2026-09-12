@@ -568,4 +568,56 @@ if (window.swup) {
 } else {
 	document.addEventListener("swup:enable", setup)
 }
+
+// ===== 不蒜子（busuanzi）访问统计 =====
+// 站点 PV/UV + 文章单页 PV。SPA 切换页面后官方脚本不会重新执行，
+// 因此这里在每次页面加载 / Swup page:view 时主动重新请求一次。
+let lastBusuanziAt = 0
+function refreshBusuanzi() {
+	// 去重：首次加载时「直接调用」与 Swup 的 page:view 几乎同时触发
+	const now = Date.now()
+	if (now - lastBusuanziAt < 500) return
+	lastBusuanziAt = now
+
+	// 移除上一次注入的 jsonp script，避免堆积
+	const old = document.getElementById("busuanzi-script");
+	if (old) old.remove()
+
+	const cbName = "BusuanziCallback_" + Math.floor(1099511627776 * Math.random())
+	;(window as any)[cbName] = (data: Record<string, number>) => {
+		const map: Record<string, string> = {
+			site_pv: "busuanzi_value_site_pv",
+			site_uv: "busuanzi_value_site_uv",
+			page_pv: "busuanzi_value_page_pv",
+		}
+		for (const key in map) {
+			const el = document.getElementById(map[key])
+			if (el && data[key] !== undefined) el.textContent = String(data[key])
+		}
+		delete (window as any)[cbName]
+	}
+
+	const script = document.createElement("script")
+	script.id = "busuanzi-script"
+	script.src = `https://busuanzi.ibruce.info/busuanzi?jsonpCallback=${cbName}`
+	script.defer = true
+	script.referrerPolicy = "no-referrer-when-downgrade"
+	document.head.appendChild(script)
+}
+
+// 首次加载
+refreshBusuanzi()
+
+// Swup 切换页面后刷新
+const setupBusuanzi = () => {
+	;(window as any).swup.hooks.on("page:view", () => {
+		// 等 DOM 替换完成后再请求
+		setTimeout(refreshBusuanzi, 60)
+	})
+}
+if ((window as any).swup?.hooks) {
+	setupBusuanzi()
+} else {
+	document.addEventListener("swup:enable", setupBusuanzi)
+}
 </script>

@@ -1,0 +1,21 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface Props {
+	class?: string;
+}
+const className = Astro.props.class;
+---
+
+<!-- 文章浏览量：由 busuanzi 的 page_pv 回填（见 Layout 的全局脚本） -->
+<div class:list={["flex flex-row items-center", className]} id="busuanzi_container_page_pv">
+	<div
+		class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2"
+	>
+		<Icon name="material-symbols:visibility-rounded"></Icon>
+	</div>
+	<div class="text-sm">
+		<span id="busuanzi_value_page_pv" class="tabular-nums">--</span>
+		<span> 次浏览</span>
+	</div>
+</div>
