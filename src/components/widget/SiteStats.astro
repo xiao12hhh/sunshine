@@ -1,20 +1,32 @@
 ---
+import { Icon } from "astro-icon/components";
 import { getBlogStatistics } from "../../utils/statistics";
 
 const stats = await getBlogStatistics();
 
-function formatNumber(n: number): string {
+/** 已运行天数 → "X 年 Y 天" */
+function formatRunning(days: number): string {
+	const years = Math.floor(days / 365);
+	const rest = days % 365;
+	if (years <= 0) return `${rest} 天`;
+	if (rest === 0) return `${years} 年`;
+	return `${years} 年 ${rest} 天`;
+}
+
+/** 字数 → 68.5k 这种紧凑格式 */
+function formatWords(n: number): string {
+	if (n >= 10000) return `${(n / 1000).toFixed(1)}k`;
 	return n.toLocaleString("en-US");
 }
 
-const items = [
-	{ key: "posts", label: "文章", value: formatNumber(stats.postCount) },
-	{ key: "words", label: "字数", value: formatNumber(stats.wordCount) },
-	{ key: "cats", label: "分类", value: formatNumber(stats.categoryCount) },
-	{ key: "tags", label: "标签", value: formatNumber(stats.tagCount) },
-	{ key: "days", label: "运行天数", value: formatNumber(stats.runningDays) },
-	{ key: "updated", label: "最近更新", value: stats.lastUpdated },
+const overview = [
+	{ label: "文章", value: String(stats.postCount) },
+	{ label: "总字数", value: formatWords(stats.wordCount) },
+	{ label: "分类", value: String(stats.categoryCount) },
+	{ label: "最近更新", value: stats.lastUpdated },
 ];
+
+const runningText = formatRunning(stats.runningDays);
 
 interface Props {
 	class?: string;
@@ -24,49 +36,55 @@ const className = Astro.props.class;
 const style = Astro.props.style;
 ---
 
-<div class:list={["card-base pb-4 ", className]} style={style}>
-	<div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2
+<div class:list={["card-base pb-4", className]} style={style}>
+	<!-- 标题 -->
+	<div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-3
         before:w-1 before:h-4 before:rounded-md before:bg-[var(--primary)]
         before:absolute before:left-[-16px] before:top-[5.5px]">
-		站点统计
+		统计
 	</div>
-	<div class="px-5 pt-1">
-		<div class="grid grid-cols-3 gap-3">
-			{items.map((item) => (
-				<div
-					class:list={[
-						"rounded-xl px-2 py-3 text-center transition",
-						"bg-[var(--btn-regular-bg)] dark:bg-black/25",
-					]}
-				>
-					<div
-						class:list={[
-							"font-bold leading-tight truncate",
-							item.key === "days" || item.key === "updated"
-								? "text-[1.05rem] pt-0.5"
-								: "text-[1.35rem]",
-						]}
-						style={`color: oklch(0.72 0.14 var(--hue));`}
-						title={String(item.value)}
-					>
-						{item.value}
-					</div>
-					<div class="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">{item.label}</div>
+
+	<div class="px-5 pt-1 flex flex-col gap-3">
+		<!-- 站点已运行 · 大卡片 -->
+		<div class="rounded-xl px-4 py-4 text-center bg-[var(--btn-regular-bg)] dark:bg-black/25">
+			<div class="flex items-center justify-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+				<Icon name="material-symbols:schedule-rounded" class="w-3.5 h-3.5"></Icon>
+				<span>站点已运行</span>
+			</div>
+			<div class="mt-1 text-2xl font-bold leading-tight" style="color: oklch(0.72 0.14 var(--hue));">
+				{runningText}
+			</div>
+		</div>
+
+		<!-- 博客总览 -->
+		<div class="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 px-1">
+			<Icon name="material-symbols:bar-chart-4-bars-rounded" class="w-4 h-4"></Icon>
+			<span>博客总览</span>
+		</div>
+		<div class="flex flex-col gap-2 px-1">
+			{overview.map((row) => (
+				<div class="flex items-center justify-between text-sm">
+					<span class="text-neutral-600 dark:text-neutral-400">{row.label}</span>
+					<span class="font-bold tabular-nums text-neutral-900 dark:text-neutral-100">{row.value}</span>
 				</div>
 			))}
 		</div>
 
-		<!-- 不蒜子访问统计：由 /busuanzi 客户端脚本回填 -->
-		<div class="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-black/10 dark:border-white/10 text-xs text-neutral-500 dark:text-neutral-400">
-			<div class="flex items-center gap-1.5">
-				<span>👁️</span>
-				<span id="busuanzi_value_site_pv" class="font-bold tabular-nums text-neutral-700 dark:text-neutral-200">--</span>
-				<span>次访问</span>
+		<!-- 访问统计 -->
+		<div class="border-t border-dashed border-black/15 dark:border-white/15 mt-2 pt-3">
+			<div class="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 px-1 mb-2">
+				<Icon name="material-symbols:visibility-rounded" class="w-4 h-4"></Icon>
+				<span>访问统计</span>
 			</div>
-			<div class="flex items-center gap-1.5">
-				<span>🙋</span>
-				<span id="busuanzi_value_site_uv" class="font-bold tabular-nums text-neutral-700 dark:text-neutral-200">--</span>
-				<span>位访客</span>
+			<div class="flex flex-col gap-2 px-1">
+				<div class="flex items-center justify-between text-sm">
+					<span class="text-neutral-600 dark:text-neutral-400">总访问量</span>
+					<span id="busuanzi_value_site_pv" class="font-bold tabular-nums text-neutral-900 dark:text-neutral-100">--</span>
+				</div>
+				<div class="flex items-center justify-between text-sm">
+					<span class="text-neutral-600 dark:text-neutral-400">访客数</span>
+					<span id="busuanzi_value_site_uv" class="font-bold tabular-nums text-neutral-900 dark:text-neutral-100">--</span>
+				</div>
 			</div>
 		</div>
 	</div>
