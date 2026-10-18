@@ -1,5 +1,11 @@
 import { getCollection } from "astro:content";
 
+/** Date → 本地时区的 YYYY-MM-DD，避免 toISOString 的 UTC 偏移 */
+function toDateKey(d: Date): string {
+	const pad = (n: number) => String(n).padStart(2, "0");
+	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 /** 统计一篇 Markdown 正文的「字数」：中文字符逐个计数，英文按单词计数 */
 export function countWords(markdown: string): number {
 	const text = markdown
@@ -29,8 +35,10 @@ export type BlogStatistics = {
 	wordCount: number;
 	categoryCount: number;
 	tagCount: number;
-	/** 从最早一篇已发布文章到今天，站点已运行天数 */
+	/** 从最早一篇已发布文章到今天，站点已运行天数（构建时算的快照，无 JS 时作兜底） */
 	runningDays: number;
+	/** 最早一篇已发布文章的日期（YYYY-MM-DD）；供前端按当天实时重算天数，无文章时为空串 */
+	runningSince: string;
 	/** 最近一次更新的日期字符串（YYYY-MM-DD） */
 	lastUpdated: string;
 };
@@ -129,6 +137,7 @@ export async function getBlogStatistics(): Promise<BlogStatistics> {
 	const day0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 	const start = oldest ? new Date(oldest.getFullYear(), oldest.getMonth(), oldest.getDate()) : day0;
 	const runningDays = oldest ? Math.max(1, Math.round((day0.getTime() - start.getTime()) / 86400000) + 1) : 0;
+	const runningSince = oldest ? toDateKey(start) : "";
 
 	return {
 		postCount: posts.length,
@@ -136,6 +145,7 @@ export async function getBlogStatistics(): Promise<BlogStatistics> {
 		categoryCount: categorySet.size,
 		tagCount: tagSet.size,
 		runningDays,
+		runningSince,
 		lastUpdated: newest ? newest.toISOString().slice(0, 10) : "-",
 	};
 }

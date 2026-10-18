@@ -51,7 +51,11 @@ const style = Astro.props.style;
 				<Icon name="material-symbols:schedule-rounded" class="w-3.5 h-3.5"></Icon>
 				<span>站点已运行</span>
 			</div>
-			<div class="mt-1 text-2xl font-bold leading-tight" style="color: oklch(0.72 0.14 var(--hue));">
+			<div
+				class="mt-1 text-2xl font-bold leading-tight"
+				style="color: oklch(0.72 0.14 var(--hue));"
+				data-running-since={stats.runningSince}
+			>
 				{runningText}
 			</div>
 		</div>
@@ -89,3 +93,26 @@ const style = Astro.props.style;
 		</div>
 	</div>
 </div>
+
+<script>
+	/** 已运行天数 → "X 年 Y 天"，与构建期渲染逻辑保持一致 */
+	function formatRunning(days: number): string {
+		const years = Math.floor(days / 365);
+		const rest = days % 365;
+		if (years <= 0) return `${rest} 天`;
+		if (rest === 0) return `${years} 年`;
+		return `${years} 年 ${rest} 天`;
+	}
+
+	for (const el of document.querySelectorAll<HTMLElement>("[data-running-since]")) {
+		const since = el.dataset.runningSince;
+		if (!since) continue;
+		const [y, m, d] = since.split("-").map(Number);
+		if (!y || !m || !d) continue;
+		const now = new Date();
+		const start = new Date(y, m - 1, d);
+		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		const days = Math.max(1, Math.round((today.getTime() - start.getTime()) / 86400000) + 1);
+		el.textContent = formatRunning(days);
+	}
+</script>
