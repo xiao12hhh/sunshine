@@ -1,0 +1,33 @@
+<div
+	id="reading-progress"
+	class="fixed left-0 top-0 z-[60] h-[2px] w-0 rounded-r-full bg-[var(--primary)] pointer-events-none transition-[width] duration-75 ease-out"
+	aria-hidden="true"
+></div>
+
+<script>
+const bar = document.getElementById("reading-progress");
+if (bar) {
+	let frame = 0;
+
+	const update = () => {
+		frame = 0;
+		// 只在文章页显示：进度条宽度按整页滚动比例计算
+		const post = document.getElementById("post-container");
+		const max = document.documentElement.scrollHeight - window.innerHeight;
+		const ratio =
+			post && max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+		bar.style.width = `${(ratio * 100).toFixed(2)}%`;
+	};
+
+	const schedule = () => {
+		if (!frame) frame = requestAnimationFrame(update);
+	};
+
+	window.addEventListener("scroll", schedule, { passive: true });
+	window.addEventListener("resize", schedule, { passive: true });
+	// swup 切换页面后重新计算（含从文章页离开时归零）
+	window.swup?.hooks?.on("page:view", schedule);
+	window.swup?.hooks?.on("visit:end", schedule);
+	update();
+}
+</script>

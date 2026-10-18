@@ -103,6 +103,27 @@ const jsonLd = {
                 <ImageWrapper id="post-cover" src={entry.data.image} basePath={path.join("content/posts/", getDir(entry.id))} class="mb-8 rounded-xl banner-container onload-animation"/>
             }
 
+            <!-- mobile TOC：桌面端目录在右侧栏，窄屏用它补上 -->
+            {siteConfig.toc.enable && headings.length > 0 && (
+                <details class="group lg:hidden mb-6 rounded-xl border border-dashed border-[var(--line-divider)] bg-black/[0.02] dark:bg-white/[0.02] onload-animation">
+                    <summary class="flex items-center gap-2 px-4 py-3 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden text-sm font-bold text-black/75 dark:text-white/75">
+                        <Icon name="material-symbols:format-list-bulleted-rounded" class="text-[var(--primary)]"></Icon>
+                        目录
+                        <Icon name="material-symbols:keyboard-arrow-down-rounded" class="ml-auto transition-transform group-open:rotate-180"></Icon>
+                    </summary>
+                    <nav class="px-4 pb-4">
+                        <ul>
+                            {headings.map((heading) => (
+                                <li class:list={["py-1 text-sm", { "pl-0": heading.depth <= 2, "pl-4": heading.depth === 3, "pl-8": heading.depth > 3 }]}>
+                                    <a href={`#${heading.slug}`} class="transition text-black/60 dark:text-white/60 hover:text-[var(--primary)]">
+                                        {heading.text}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+                </details>
+            )}
 
             <Markdown class="mb-6 markdown-content onload-animation">
                 <Content />
