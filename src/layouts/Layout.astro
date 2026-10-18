@@ -146,6 +146,10 @@ const bannerOffset =
 
 		<slot name="head"></slot>
 
+		<!-- 访问统计：Vercount（不蒜子的替代，原不蒜子服务已 502）。
+			 脚本只按 id 填一次值，SPA 切换页面由页尾脚本负责回填，不重复计数。 -->
+		<script is:inline src="https://events.vercount.one/js" defer></script>
+
 		<link rel="alternate" type="application/rss+xml" title={profileConfig.name} href={`${Astro.site}rss.xml`}/>
 
 	</head>
@@ -569,55 +573,84 @@ if (window.swup) {
 	document.addEventListener("swup:enable", setup)
 }
 
-// ===== 不蒜子（busuanzi）访问统计 =====
-// 站点 PV/UV + 文章单页 PV。SPA 切换页面后官方脚本不会重新执行，
-// 因此这里在每次页面加载 / Swup page:view 时主动重新请求一次。
-let lastBusuanziAt = 0
-function refreshBusuanzi() {
-	// 去重：首次加载时「直接调用」与 Swup 的 page:view 几乎同时触发
-	const now = Date.now()
-	if (now - lastBusuanziAt < 500) return
-	lastBusuanziAt = now
+// ===== 访问统计（Vercount）=====
+// Vercount 的脚本在 head 里只加载一次、只填一次 DOM。Swup 切换页面会重建侧栏，
+// 数字因此会被替换回 "--"，所以这里把首次拿到的值缓存到 sessionStorage，
+// 切换后直接回填：既不重复计数，也不会闪一下 "--"。取不到数就整块隐藏。
+const VISIT_CACHE_KEY = "sunshine:visit-stats"
+const VISIT_CACHE_TTL = 30 * 60 * 1000
 
-	// 移除上一次注入的 jsonp script，避免堆积
-	const old = document.getElementById("busuanzi-script");
-	if (old) old.remove()
+type VisitStats = { pv: string; uv: string; at: number }
 
-	const cbName = "BusuanziCallback_" + Math.floor(1099511627776 * Math.random())
-	;(window as any)[cbName] = (data: Record<string, number>) => {
-		const map: Record<string, string> = {
-			site_pv: "busuanzi_value_site_pv",
-			site_uv: "busuanzi_value_site_uv",
-			page_pv: "busuanzi_value_page_pv",
-		}
-		for (const key in map) {
-			const el = document.getElementById(map[key])
-			if (el && data[key] !== undefined) el.textContent = String(data[key])
-		}
-		delete (window as any)[cbName]
+function readVisitCache(): VisitStats | null {
+	try {
+		const raw = sessionStorage.getItem(VISIT_CACHE_KEY)
+		if (!raw) return null
+		const parsed = JSON.parse(raw) as VisitStats
+		if (!parsed?.at || Date.now() - parsed.at > VISIT_CACHE_TTL) return null
+		if (!/^\d+$/.test(parsed.pv ?? "") || !/^\d+$/.test(parsed.uv ?? "")) return null
+		return parsed
+	} catch {
+		return null
 	}
-
-	const script = document.createElement("script")
-	script.id = "busuanzi-script"
-	script.src = `https://busuanzi.ibruce.info/busuanzi?jsonpCallback=${cbName}`
-	script.defer = true
-	script.referrerPolicy = "no-referrer-when-downgrade"
-	document.head.appendChild(script)
 }
 
-// 首次加载
-refreshBusuanzi()
+function paintVisitStats(pv: string, uv: string) {
+	const pvEl = document.getElementById("vercount_value_site_pv")
+	const uvEl = document.getElementById("vercount_value_site_uv")
+	if (pvEl) pvEl.textContent = pv
+	if (uvEl) uvEl.textContent = uv
+}
 
-// Swup 切换页面后刷新
-const setupBusuanzi = () => {
+function readVisitStatsFromDom(): VisitStats | null {
+	const pv = document.getElementById("vercount_value_site_pv")?.textContent?.trim() ?? ""
+	const uv = document.getElementById("vercount_value_site_uv")?.textContent?.trim() ?? ""
+	if (!/^\d+$/.test(pv) || !/^\d+$/.test(uv)) return null
+	return { pv, uv, at: Date.now() }
+}
+
+function hideVisitStats() {
+	for (const el of document.querySelectorAll<HTMLElement>("[data-visit-stats]")) {
+		el.hidden = true
+	}
+}
+
+function sweepVisitStats(attempt = 0) {
+	const cached = readVisitCache()
+	if (cached) {
+		paintVisitStats(cached.pv, cached.uv)
+		return
+	}
+
+	const fresh = readVisitStatsFromDom()
+	if (fresh) {
+		try {
+			sessionStorage.setItem(VISIT_CACHE_KEY, JSON.stringify(fresh))
+		} catch {
+			// 隐私模式 / 存储被禁用时忽略，数字已经画上去了
+		}
+		return
+	}
+
+	// 约 6 秒还没拿到数字，就认为统计源不可用，整块隐藏而不是一直挂着 "--"
+	if (attempt >= 20) {
+		hideVisitStats()
+		return
+	}
+	setTimeout(() => sweepVisitStats(attempt + 1), 300)
+}
+
+sweepVisitStats()
+
+const setupVisitStats = () => {
 	;(window as any).swup.hooks.on("page:view", () => {
-		// 等 DOM 替换完成后再请求
-		setTimeout(refreshBusuanzi, 60)
+		// 等侧栏 DOM 替换完成再回填
+		setTimeout(() => sweepVisitStats(), 120)
 	})
 }
 if ((window as any).swup?.hooks) {
-	setupBusuanzi()
+	setupVisitStats()
 } else {
-	document.addEventListener("swup:enable", setupBusuanzi)
+	document.addEventListener("swup:enable", setupVisitStats)
 }
 </script>

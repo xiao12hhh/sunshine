@@ -71,7 +71,7 @@ export const profileConfig: ProfileConfig = {
 		{
 			name: "GitHub",
 			icon: "fa6-brands:github",
-			url: "https://github.com/", // TODO: 改成你自己的 GitHub 主页
+			url: "https://github.com/xiao12hhh",
 		},
 		{
 			name: "Email",
